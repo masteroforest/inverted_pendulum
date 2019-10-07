@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import Pololu_VNH5019 as VNH
+import Pololu_VNH5019 as VNH  # подвязка драйвера
 import signal
 import sys
 import socket
