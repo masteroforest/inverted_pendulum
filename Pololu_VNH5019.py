@@ -21,10 +21,10 @@
 
 
 import time
-import Adafruit_BBIO.GPIO as GPIO
-import Adafruit_BBIO.PWM as PWM
+import Adafruit_BBIO.GPIO as GPIO  # скорректировано с GPIO
+import Adafruit_BBIO.PWM as PWM  # скорректировано с GPIO
 
-# Motor Driver Sheild GPIO Numbers
+# Motor Driver Sheild GPIO Numbers (Что за номера, это по Ардуино? И откуда исходник)
 VNH_SHIELD_M1INA = 17
 VNH_SHIELD_M1INB = 27        
 VNH_SHIELD_M1EN = 23
@@ -34,14 +34,17 @@ VNH_SHIELD_M2EN = 24
 VNH_SHIELD_M1PWM = 22
 VNH_SHIELD_M2PWM = 13
 
-
+# Задание класса Polulu
 class Pololu_VNH5019(object):
     """ Class to represent and interact with a VNH5019 Motor Controller. """
-
+    
+    
+    # функция инициализации GPIO, PWM
     def __init__(self, ina, inb, enable, ctrl,
                  enable_pwm=True,
                  gpio=GPIO.get_platform_gpio(),
                  pwm=PWM.get_platform_pwm() ):
+        
         # Save GPIO state and pin numbers
         self._en = enable
         self._ina = ina
