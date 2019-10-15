@@ -21,8 +21,8 @@
 
 
 import time
-import Adafruit_GPIO as GPIO
-import Adafruit_GPIO.PWM as PWM
+import Adafruit_BBIO.GPIO as GPIO
+import Adafruit_BBIO.PWM as PWM
 
 # Motor Driver Sheild GPIO Numbers
 VNH_SHIELD_M1INA = 17
