@@ -59,7 +59,7 @@ def PID_Control():
 	PWM_L=(PWM_T+MinPower(PWM_T,PWM_MIN))   
 	md.setM1Speed(PWM_R)
 	md.setM2Speed(-PWM_L)
-	print actAngle,"\t",e_Arr,"\t", de,"\t" , "\n"
+	print (actAngle,"\t",e_Arr,"\t", de,"\t" , "\n")
   
  
 def MinPower(xxxxx, minp):
@@ -76,7 +76,7 @@ def signal_handler(sig, frame):
 
 	
 def vivod(y_rotation,e_Arr, de, Kp,Ki,Kd):
-	print y_rotation,"\t",e_Arr,"\t", de,"\t", Kp,"\t",Ki,"\t",Kd
+	print (y_rotation,"\t",e_Arr,"\t", de,"\t", Kp,"\t",Ki,"\t",Kd)
 	f = open('text.txt', 'a')
 	f.writelines(str(y_rotation)+"\t"+str(e_Arr)+"\t"+ str(de)+"\t"+ str(Kp)+"\t"+str(Ki)+"\t"+str(Kd)+"\n")
 	#f.seek(10)
