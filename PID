@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
-import Pololu_VNH5019 as VNH  # подвязка драйвера
+import Pololu_VNH5019 as VNH  # подвязка драйвера ?? откуда исходник
 import signal
 import sys
 import socket
-from mpu6050 import *
+from mpu6050 import *  # повязка датчика
 import time
 
-# Some comment
-
+# Инициализация датчика и драйвера
 mpu = MPU6050()
 mpu.initialize()
 md = VNH.Pololu_DualVNH5019Shield()
 
-#peremennye
+# Ввод переменных
 PWM_T=0
 PWM_R=0
 PWM_L=0
@@ -31,9 +30,9 @@ e_Arr=0
 e_Arr_Max=400
 currentAngle_old=0
 
-# Set calibration data
-#mpu.gyro_offs = {'x': -178, 'y': 259, 'z': -104}
-#mpu.accel_offs =  {'y': -354, 'x': 389, 'z': -1482}
+# Калибровка данных
+# mpu.gyro_offs = {'x': -178, 'y': 259, 'z': -104}
+# mpu.accel_offs =  {'y': -354, 'x': 389, 'z': -1482}
 
 accel_data = mpu.get_accel()
 y_rotation = mpu.get_y_rotation(accel_data)
@@ -42,6 +41,7 @@ y_rotation = mpu.get_y_rotation(accel_data)
 last_time = time.time()
 alpha = 0.95;
 
+# функция лимит
 def Limit(x, limit):
 	if abs(x)<=limit:
 		return x
@@ -50,7 +50,7 @@ def Limit(x, limit):
 	if abs(x)>limit and x>0:
 		return limit
 
-
+# функция PID-контроль
 def PID_Control():
 	PWM_T = K*(Kp*actAngle+Ki*e_Arr+Kd*de)
 	PWM_T = PWM_T + MinPower(PWM_T,PWM_MIN)
@@ -61,46 +61,51 @@ def PID_Control():
 	md.setM2Speed(-PWM_L)
 	print (actAngle,"\t",e_Arr,"\t", de,"\t" , "\n")
   
- 
+# функция minpower 
 def MinPower(xxxxx, minp):
 	if xxxxx>0:
 			return  minp
 	if xxxxx<0:
 			return  -minp
 
-			
+# функция драйвера			
 def signal_handler(sig, frame):
 	md.setM1Speed(0)
 	md.setM2Speed(0)
 	sys.exit(0)
 
-	
+# функция вывода	
 def vivod(y_rotation,e_Arr, de, Kp,Ki,Kd):
 	print (y_rotation,"\t",e_Arr,"\t", de,"\t", Kp,"\t",Ki,"\t",Kd)
 	f = open('text.txt', 'a')
 	f.writelines(str(y_rotation)+"\t"+str(e_Arr)+"\t"+ str(de)+"\t"+ str(Kp)+"\t"+str(Ki)+"\t"+str(Kd)+"\n")
-	#f.seek(10)
+	# f.seek(10)
 	f.close()
 	
 
 while True:
 	new_time = time.time()
+	
 	gyro_data = mpu.get_gyro()
 	accel_data = mpu.get_accel()
+	
 	dt = new_time - last_time
 	last_time = new_time
+	
 	gyro_angle_y = gyro_data['y']*dt + y_rotation
 	y_rotation = alpha*gyro_angle_y + (1.0 - alpha)*mpu.get_y_rotation(accel_data)
 	y_offset = y_rotation * 2
 	actAngle=y_rotation+1.6
+	
 	de = actAngle - currentAngle_old
 	e_Arr = e_Arr+actAngle
 	e_Arr = Limit(e_Arr, e_Arr_Max)
-	currentAngle_old=actAngle
-	#vivod(y_rotation, e_Arr ,de, Kp,Ki,Kd)
-	if abs(actAngle)<40:
+	currentAngle_old=actAngle 
+	# vivod(y_rotation, e_Arr ,de, Kp,Ki,Kd)
+	
+	if abs(actAngle)<40:  # Включение PID-контроля при этих условиях
 		PID_Control()
-	else:
+	else:		      # Иначе отсутствие регулирования
 		md.setM1Speed(0)
 		md.setM2Speed(0)	
 	signal.signal(signal.SIGINT, signal_handler)
