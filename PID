@@ -16,8 +16,8 @@ PWM_T=0
 PWM_R=0
 PWM_L=0
 
-de=0
-actAngle=0
+de=0  # дифференциальная ошибка
+actAngle=0  # пропорциональная ошибка
 
 K=1
 Kp=9
@@ -26,7 +26,7 @@ Kd=40
 
 PWM_MIN=1
 LimitPower=400
-e_Arr=0
+e_Arr=0  # интегральная ошибка
 e_Arr_Max=400
 currentAngle_old=0
 
@@ -34,8 +34,8 @@ currentAngle_old=0
 # mpu.gyro_offs = {'x': -178, 'y': 259, 'z': -104}
 # mpu.accel_offs =  {'y': -354, 'x': 389, 'z': -1482}
 
-accel_data = mpu.get_accel()
-y_rotation = mpu.get_y_rotation(accel_data)
+accel_data = mpu.get_accel()  # метод mpu get_accel(ускорение)
+y_rotation = mpu.get_y_rotation(accel_data)  # метод mpu get_accel(поворот по y)
 
 
 last_time = time.time()
@@ -52,16 +52,19 @@ def Limit(x, limit):
 
 # функция PID-контроль
 def PID_Control():
-	PWM_T = K*(Kp*actAngle+Ki*e_Arr+Kd*de)
+	PWM_T = K*(Kp*actAngle+Ki*e_Arr+Kd*de)  # вычисление воздействия на колеса
+	
 	PWM_T = PWM_T + MinPower(PWM_T,PWM_MIN)
-	PWM_T = Limit(PWM_T,LimitPower)   
-	PWM_R=(PWM_T+MinPower(PWM_T,PWM_MIN))
-	PWM_L=(PWM_T+MinPower(PWM_T,PWM_MIN))   
-	md.setM1Speed(PWM_R)
-	md.setM2Speed(-PWM_L)
-	print (actAngle,"\t",e_Arr,"\t", de,"\t" , "\n")
+	PWM_T = Limit(PWM_T,LimitPower)  
+	
+	PWM_R=(PWM_T+MinPower(PWM_T,PWM_MIN))  # воздействие на правое колесо
+	PWM_L=(PWM_T+MinPower(PWM_T,PWM_MIN))  # воздействие на левое колесо
+	md.setM1Speed(PWM_R)  # вызов метода POLULU setM1Speed
+	md.setM2Speed(-PWM_L)  # вызов метода POLULU setM1Speed
+	
+	print (actAngle,"\t",e_Arr,"\t", de,"\t" , "\n")  # вывод пропор интегр дифф -- ошибок
   
-# функция minpower 
+# функция minpower (переключатель: либо 1, либо -1. Т.к. minp == 1)
 def MinPower(xxxxx, minp):
 	if xxxxx>0:
 			return  minp
@@ -74,8 +77,8 @@ def signal_handler(sig, frame):
 	md.setM2Speed(0)
 	sys.exit(0)
 
-# функция вывода	
-def vivod(y_rotation,e_Arr, de, Kp,Ki,Kd):
+# функция вывода(запись ОС)	
+def vivod(y_rotation,e_Arr, de, Kp,Ki,Kd):  # получает: у_поворот, интегр_ош, дифф_ош, Kp, Ki, Kd
 	print (y_rotation,"\t",e_Arr,"\t", de,"\t", Kp,"\t",Ki,"\t",Kd)
 	f = open('text.txt', 'a')
 	f.writelines(str(y_rotation)+"\t"+str(e_Arr)+"\t"+ str(de)+"\t"+ str(Kp)+"\t"+str(Ki)+"\t"+str(Kd)+"\n")
@@ -83,24 +86,24 @@ def vivod(y_rotation,e_Arr, de, Kp,Ki,Kd):
 	f.close()
 	
 
-while True:
+while True:  # бесконечный цикл
 	new_time = time.time()
 	
-	gyro_data = mpu.get_gyro()
-	accel_data = mpu.get_accel()
+	gyro_data = mpu.get_gyro()  # метод mpu get_gyro(взятие угла)
+	accel_data = mpu.get_accel()  # метод mpu get_accel(взятие ускорения)
 	
-	dt = new_time - last_time
+	dt = new_time - last_time  # дифф. времени
 	last_time = new_time
 	
-	gyro_angle_y = gyro_data['y']*dt + y_rotation
-	y_rotation = alpha*gyro_angle_y + (1.0 - alpha)*mpu.get_y_rotation(accel_data)
-	y_offset = y_rotation * 2
-	actAngle=y_rotation+1.6
+	gyro_angle_y = gyro_data['y']*dt + y_rotation  # ?!?
+	y_rotation = alpha*gyro_angle_y + (1.0 - alpha)*mpu.get_y_rotation(accel_data)  # alpha == 0.95
+	y_offset = y_rotation * 2  # ?!?
+	actAngle = y_rotation + 1.6  # ?!?
 	
 	de = actAngle - currentAngle_old
 	e_Arr = e_Arr+actAngle
 	e_Arr = Limit(e_Arr, e_Arr_Max)
-	currentAngle_old=actAngle 
+	currentAngle_old = actAngle 
 	# vivod(y_rotation, e_Arr ,de, Kp,Ki,Kd)
 	
 	if abs(actAngle)<40:  # Включение PID-контроля при этих условиях
@@ -109,4 +112,4 @@ while True:
 		md.setM1Speed(0)
 		md.setM2Speed(0)	
 	signal.signal(signal.SIGINT, signal_handler)
-	time.sleep(0.005)
+	time.sleep(0.005)  # интервал?
