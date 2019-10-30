@@ -3,7 +3,7 @@ import Pololu_VNH5019 as VNH  # подвязка драйвера ?? откуд�
 import signal
 import sys
 import socket
-from mpu6050 import *  # повязка датчика
+from mpu6050 import *  # подвязка датчика
 import time
 
 # Инициализация датчика и драйвера
