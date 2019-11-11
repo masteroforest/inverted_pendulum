@@ -6,6 +6,7 @@ import time
 
 import Pololu_VNH5019 as VNH  # подвязка драйвера ?? откуда исходник
 from mpu6050 import *  # подвязка датчика
+# import gaga
 
 
 # Применен процедурный стиль написания кода
@@ -80,7 +81,7 @@ def MinPower(xxxxx, minp):
 	if xxxxx<0:
 			return  -minp
 
-# функция драйвера			
+# функция драйвера(добиться остановки драйвера при отключении исходника)			
 def signal_handler(sig, frame):
 	md.setM1Speed(0)
 	md.setM2Speed(0)
@@ -114,12 +115,13 @@ while True:
 	e_Arr = e_Arr+actAngle  # интергральной ошибке присваивается сумма интегральной и пропорциональной
 	e_Arr = Limit(e_Arr, e_Arr_Max)
 	currentAngle_old = actAngle # инициализируется стар пропорц ошибка
-	# vivod(y_rotation, e_Arr ,de, Kp,Ki,Kd)
+	# vivod(y_rotation, e_Arr, de, Kp, Ki, Kd)
 	
 	if abs(actAngle)<40:  # Включение PID-контроля при этих условиях (пропор ошибка)
+		# I/O точка
 		PID_Control()
 	else:		      # Иначе отсутствие регулирования
 		md.setM1Speed(0)
 		md.setM2Speed(0)	
-	signal.signal(signal.SIGINT, signal_handler)  # вероятно, метод POLOLU
+	signal.signal(signal.SIGINT, signal_handler)  # вероятно, метод POLULU
 	time.sleep(0.005)  # приостановить выполнение на зад кол-во секунд
