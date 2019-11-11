@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-import Pololu_VNH5019 as VNH  # подвязка драйвера ?? откуда исходник
 import signal
 import sys
 import socket
-from mpu6050 import *  # подвязка датчика
 import time
 
+import Pololu_VNH5019 as VNH  # подвязка драйвера ?? откуда исходник
+from mpu6050 import *  # подвязка датчика
+
+
 # Применен процедурный стиль написания кода
+
+
+# 1. ДАННЫЕ
 
 # Инициализация датчика и драйвера
 mpu = MPU6050()
@@ -39,9 +44,10 @@ currentAngle_old=0
 accel_data = mpu.get_accel()  # метод mpu get_accel(ускорение)
 y_rotation = mpu.get_y_rotation(accel_data)  # метод mpu get_accel(поворот по y)
 
-
 last_time = time.time()
 alpha = 0.95;
+
+# 2. ФУНКЦИИ
 
 # функция лимит(LimitPower == 400)
 def Limit(x, limit):
@@ -88,15 +94,16 @@ def vivod(y_rotation,e_Arr, de, Kp,Ki,Kd):  # получает: у_поворо�
 	# f.seek(10)
 	f.close()
 	
-
-while True:  # бесконечный цикл
-	new_time = time.time()
+# 3. ИСПОЛНЯЕМЫЙ КОД (бесконечный цикл)
+	
+while True:  
+	new_time = time.time()  # время в сек, прошедшее с 1 янв 1970
 	
 	gyro_data = mpu.get_gyro()  # метод mpu get_gyro(взятие угла)
 	accel_data = mpu.get_accel()  # метод mpu get_accel(взятие ускорения)
 	
 	dt = new_time - last_time  # дифф. времени
-	last_time = new_time
+	last_time = new_time  # обновление last_time
 	
 	gyro_angle_y = gyro_data['y']*dt + y_rotation  # (взятие угла)*dt + поворот по "y"
 	y_rotation = alpha*gyro_angle_y + (1.0 - alpha)*mpu.get_y_rotation(accel_data)  # alpha == 0.95
@@ -115,4 +122,4 @@ while True:  # бесконечный цикл
 		md.setM1Speed(0)
 		md.setM2Speed(0)	
 	signal.signal(signal.SIGINT, signal_handler)  # вероятно, метод POLOLU
-	time.sleep(0.005)  # интервал?
+	time.sleep(0.005)  # приостановить выполнение на зад кол-во секунд
