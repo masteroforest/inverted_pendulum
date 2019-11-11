@@ -6,20 +6,22 @@ import socket
 from mpu6050 import *  # подвязка датчика
 import time
 
+# Применен процедурный стиль написания кода
+
 # Инициализация датчика и драйвера
 mpu = MPU6050()
 mpu.initialize()
 md = VNH.Pololu_DualVNH5019Shield()
 
 # Ввод переменных
-PWM_T=0
-PWM_R=0
-PWM_L=0
+PWM_T=0  # вычисление(составляющая) воздействия на колеса
+PWM_R=0  # воздействие на правое колесо
+PWM_L=0  # воздействие на левое колесо
 
 de=0  # дифференциальная ошибка
 actAngle=0  # пропорциональная ошибка
 
-K=1
+K=1  # постоянный коэфф
 Kp=9
 Ki=0.5
 Kd=40
@@ -41,10 +43,11 @@ y_rotation = mpu.get_y_rotation(accel_data)  # метод mpu get_accel(пово
 last_time = time.time()
 alpha = 0.95;
 
-# функция лимит
+# функция лимит(LimitPower == 400)
 def Limit(x, limit):
 	if abs(x)<=limit:
 		return x
+	
 	if abs(x)>limit and x<0:
 		return -limit
 	if abs(x)>limit and x>0:
@@ -54,11 +57,11 @@ def Limit(x, limit):
 def PID_Control():
 	PWM_T = K*(Kp*actAngle+Ki*e_Arr+Kd*de)  # вычисление воздействия на колеса
 	
-	PWM_T = PWM_T + MinPower(PWM_T,PWM_MIN)
-	PWM_T = Limit(PWM_T,LimitPower)  
-	
-	PWM_R=(PWM_T+MinPower(PWM_T,PWM_MIN))  # воздействие на правое колесо
-	PWM_L=(PWM_T+MinPower(PWM_T,PWM_MIN))  # воздействие на левое колесо
+	PWM_T = PWM_T + MinPower(PWM_T,PWM_MIN)  # PWM_MIN(minp) == 1. Т.е: либо PWM_T - 1, либо PWM_T + 1
+	PWM_T = Limit(PWM_T,LimitPower)  # LimitPower == 400
+	# что, если передать просто PWM_T ?
+	PWM_R=(PWM_T+MinPower(PWM_T,PWM_MIN))  # воздействие на правое колесо ?2-е преобразование
+	PWM_L=(PWM_T+MinPower(PWM_T,PWM_MIN))  # воздействие на левое колесо ?2-е преобразование
 	md.setM1Speed(PWM_R)  # вызов метода POLULU setM1Speed
 	md.setM2Speed(-PWM_L)  # вызов метода POLULU setM1Speed
 	
@@ -95,21 +98,21 @@ while True:  # бесконечный цикл
 	dt = new_time - last_time  # дифф. времени
 	last_time = new_time
 	
-	gyro_angle_y = gyro_data['y']*dt + y_rotation  # ?!?
+	gyro_angle_y = gyro_data['y']*dt + y_rotation  # (взятие угла)*dt + поворот по "y"
 	y_rotation = alpha*gyro_angle_y + (1.0 - alpha)*mpu.get_y_rotation(accel_data)  # alpha == 0.95
 	y_offset = y_rotation * 2  # ?!?
 	actAngle = y_rotation + 1.6  # ?!?
 	
-	de = actAngle - currentAngle_old
-	e_Arr = e_Arr+actAngle
+	de = actAngle - currentAngle_old  # дифф ошибке присваивается разность пропорциональной ошибки, стар и нов
+	e_Arr = e_Arr+actAngle  # интергральной ошибке присваивается сумма интегральной и пропорциональной
 	e_Arr = Limit(e_Arr, e_Arr_Max)
-	currentAngle_old = actAngle 
+	currentAngle_old = actAngle # инициализируется стар пропорц ошибка
 	# vivod(y_rotation, e_Arr ,de, Kp,Ki,Kd)
 	
-	if abs(actAngle)<40:  # Включение PID-контроля при этих условиях
+	if abs(actAngle)<40:  # Включение PID-контроля при этих условиях (пропор ошибка)
 		PID_Control()
 	else:		      # Иначе отсутствие регулирования
 		md.setM1Speed(0)
 		md.setM2Speed(0)	
-	signal.signal(signal.SIGINT, signal_handler)
+	signal.signal(signal.SIGINT, signal_handler)  # вероятно, метод POLOLU
 	time.sleep(0.005)  # интервал?
